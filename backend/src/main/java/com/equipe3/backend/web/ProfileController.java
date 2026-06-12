@@ -3,6 +3,7 @@ package com.equipe3.backend.web;
 import com.equipe3.backend.dto.ChatRequest;
 import com.equipe3.backend.dto.CompanyDto;
 import com.equipe3.backend.dto.CreateCompanyRequest;
+import com.equipe3.backend.dto.DecisionRequest;
 import com.equipe3.backend.dto.ProfileResponse;
 import com.equipe3.backend.service.ProfileService;
 import jakarta.validation.Valid;
@@ -43,7 +44,8 @@ public class ProfileController {
     public ResponseEntity<CompanyDto> createCompany(
             @PathVariable String name,
             @Valid @RequestBody CreateCompanyRequest request) {
-        CompanyDto company = CompanyDto.from(service.createCompany(name, request.name()));
+        CompanyDto company = CompanyDto.from(
+                service.createCompany(name, request.name(), request.type(), request.character()));
         return ResponseEntity.status(HttpStatus.CREATED).body(company);
     }
 
@@ -68,5 +70,17 @@ public class ProfileController {
     @PostMapping("/{name}/company/icon")
     public CompanyDto generateIcon(@PathVariable String name) {
         return CompanyDto.from(service.generateIcon(name));
+    }
+
+    @PostMapping("/{name}/company/event")
+    public CompanyDto generateEvent(@PathVariable String name) {
+        return CompanyDto.from(service.generateEvent(name));
+    }
+
+    @PostMapping("/{name}/company/decision")
+    public CompanyDto decide(
+            @PathVariable String name,
+            @Valid @RequestBody DecisionRequest request) {
+        return CompanyDto.from(service.decide(name, request.solution()));
     }
 }

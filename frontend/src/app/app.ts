@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CompanyView } from './components/company/company';
-import { Dashboard } from './components/dashboard/dashboard';
+import { Game } from './components/game/game';
 import { ProfileService } from './services/profile.service';
 
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CompanyView, Dashboard],
+  imports: [CompanyView, Game],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

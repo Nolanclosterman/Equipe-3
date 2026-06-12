@@ -5,7 +5,22 @@ Application split into two parts:
 - `frontend/`: Angular single-page application
 - `backend/`: Spring Boot REST API
 
-The frontend lets a player manage a company, start it, delete it, generate an icon, and chat with the assistant. The backend exposes the REST endpoints and keeps the profile/company state used by the UI.
+The game is an entrepreneurship simulation for a 12-year-old: the player creates a company (avatar + type + name), generates its icon, then plays a **decision-based game loop**. Each turn the backend asks Claude to generate an event (a problem, 3 proposed solutions, the character presenting it, and a kid-friendly lexicon); the player discusses it with an AI assistant, picks a solution, and Claude scores the decision — moving the company's three indicators (💰 money, 🌱 ecology, 🤝 image) and producing a narrative consequence. A session lasts up to 15 events.
+
+When no Claude API key is configured the backend falls back to built-in sample events so the app still runs offline.
+
+### Claude API key
+
+The backend reads `ANTHROPIC_API_KEY` to talk to the Claude API. Copy `.env.example` to `.env` at the repo root and fill it in:
+
+```bash
+cp .env.example .env
+# then edit .env and set ANTHROPIC_API_KEY=sk-ant-...
+```
+
+- **Docker:** `docker compose` reads `.env` automatically and passes the key to the backend container.
+- **Local backend:** export it in the shell before `mvn spring-boot:run`, e.g. `export ANTHROPIC_API_KEY=sk-ant-...`.
+- Optional: `ANTHROPIC_MODEL` overrides the model (defaults to `claude-opus-4-8`).
 
 ## Project structure
 

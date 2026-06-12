@@ -15,11 +15,14 @@ export class ProfileService {
   // --- writable state ---
   private readonly _profile = signal<Profile | null>(null);
   private readonly _loading = signal(false);
+  private readonly _generating = signal(false);
   private readonly _error = signal<string | null>(null);
 
   // --- public read-only views ---
   readonly profile = this._profile.asReadonly();
   readonly loading = this._loading.asReadonly();
+  /** True while an AI call (event generation, scoring, chat) is in flight. */
+  readonly generating = this._generating.asReadonly();
   readonly error = this._error.asReadonly();
 
   readonly company = computed<Company | null>(() => this._profile()?.company ?? null);
@@ -36,11 +39,18 @@ export class ProfileService {
   }
 
   /** POST /profiles/{name}/company — create a company when none exists. */
-  async createCompany(name: string, companyName: string): Promise<void> {
+  async createCompany(
+    name: string,
+    companyName: string,
+    type: string | null,
+    character: string | null
+  ): Promise<void> {
     await this.run(async () => {
       const company = await firstValueFrom(
         this.http.post<Company>(`${API_BASE}/profiles/${encodeURIComponent(name)}/company`, {
           name: companyName,
+          type,
+          character,
         })
       );
       return this.withCompany(name, company);
@@ -70,7 +80,7 @@ export class ProfileService {
     });
   }
 
-  /** POST /profiles/{name}/company/chat — send a player message. */
+  /** POST /profiles/{name}/company/chat — send a player message (AI help). */
   async sendMessage(name: string, message: string): Promise<void> {
     await this.run(async () => {
       const company = await firstValueFrom(
@@ -80,7 +90,7 @@ export class ProfileService {
         )
       );
       return this.withCompany(name, company);
-    });
+    }, true);
   }
 
   /** POST /profiles/{name}/company/icon — (re)generate the company icon. */
@@ -93,16 +103,50 @@ export class ProfileService {
         )
       );
       return this.withCompany(name, company);
-    });
+    }, true);
+  }
+
+  /** POST /profiles/{name}/company/event — generate the next game event. */
+  async generateEvent(name: string): Promise<void> {
+    await this.run(async () => {
+      const company = await firstValueFrom(
+        this.http.post<Company>(
+          `${API_BASE}/profiles/${encodeURIComponent(name)}/company/event`,
+          {}
+        )
+      );
+      return this.withCompany(name, company);
+    }, true);
+  }
+
+  /** POST /profiles/{name}/company/decision — submit the chosen solution. */
+  async decide(name: string, solution: string): Promise<void> {
+    await this.run(async () => {
+      const company = await firstValueFrom(
+        this.http.post<Company>(
+          `${API_BASE}/profiles/${encodeURIComponent(name)}/company/decision`,
+          { solution }
+        )
+      );
+      return this.withCompany(name, company);
+    }, true);
   }
 
   private withCompany(name: string, company: Company): Profile {
     return { name: this._profile()?.name ?? name, company };
   }
 
-  /** Runs an action, managing loading/error flags and committing the profile. */
-  private async run(action: () => Promise<Profile | void>): Promise<void> {
+  /**
+   * Runs an action, managing loading/error flags and committing the profile.
+   * When {@code generating} is true the dedicated AI-busy flag is raised too,
+   * so the UI can show the funny loading animation.
+   */
+  private async run(
+    action: () => Promise<Profile | void>,
+    generating = false
+  ): Promise<void> {
     this._loading.set(true);
+    if (generating) this._generating.set(true);
     this._error.set(null);
     try {
       const profile = await action();
@@ -113,6 +157,7 @@ export class ProfileService {
       this._error.set(this.toMessage(err));
     } finally {
       this._loading.set(false);
+      if (generating) this._generating.set(false);
     }
   }
 
@@ -120,7 +165,7 @@ export class ProfileService {
     if (typeof err === 'object' && err !== null && 'status' in err) {
       const status = (err as { status: number }).status;
       if (status === 0) return "Impossible de joindre le serveur. Le backend est-il démarré ?";
-      if (status === 409) return 'Une entreprise existe déjà pour ce joueur.';
+      if (status === 409) return 'Action impossible pour le moment.';
       if (status === 404) return 'Aucune entreprise trouvée.';
       return `Erreur serveur (${status}).`;
     }

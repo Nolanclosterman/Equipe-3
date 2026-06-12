@@ -4,6 +4,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: equipe3-backend
+    environment:
+      # Read from the .env file at the repo root (docker compose loads it
+      # automatically for variable substitution).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
     ports:
       - "8080:8080"
 
