@@ -22,3 +22,7 @@ openai:
 # Where the generated PNGs are stored and served from (GET /assets/{file}).
 assets:
   dir: ${ASSETS_DIR:./generated-assets}
+
+app:
+  cors:
+    allowed-origins: ${FRONTEND_ORIGIN:http://localhost:4200}
