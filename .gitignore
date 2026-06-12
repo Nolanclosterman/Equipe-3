@@ -3,3 +3,4 @@ plan.md
 backend/target
 backend/.DS_Store
 .env
+.DS_Store
