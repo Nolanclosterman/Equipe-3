@@ -27,11 +27,7 @@
                 [title]="a.label"
                 (click)="pickAvatar(a)"
               >
-                @if (store.asset(a.key); as url) {
-                  <img [src]="url" [alt]="a.label" />
-                } @else {
-                  <span class="avatar-emoji">{{ a.emoji }}</span>
-                }
+                <img [src]="a.image" [alt]="a.label" />
               </button>
             }
           </div>
@@ -124,11 +120,7 @@
       <div class="identity">
         <span class="big-avatar">
           @if (companyAvatar(); as a) {
-            @if (store.asset(a.key); as url) {
-              <img [src]="url" [alt]="a.label" />
-            } @else {
-              {{ a.emoji }}
-            }
+            <img [src]="a.image" [alt]="a.label" />
           } @else {
             👾
           }

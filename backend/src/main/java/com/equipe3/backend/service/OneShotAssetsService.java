@@ -15,9 +15,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * One-shot generation of the static assets the UI needs: the player profile
- * pictures (2000s bande dessinée kid avatars) and the icons for every UI
- * element (loading screen, assistant, company activity types).
+ * One-shot generation of the static icons the UI needs (loading screen,
+ * assistant, company activity types). The player profile pictures are NOT
+ * generated here: they are static images shipped with the frontend
+ * (frontend/public/avatars/).
  *
  * Generation runs once in the background after startup and is idempotent: a
  * file that already exists in the assets directory is never re-generated, so
@@ -34,16 +35,6 @@ public class OneShotAssetsService {
     private static final Map<String, String> CATALOG = new LinkedHashMap<>();
 
     static {
-        // --- profile pictures: a diverse series of kid entrepreneur avatars ---
-        avatar("avatar-1", "a cheerful 12-year-old boy with short brown hair and a yellow t-shirt");
-        avatar("avatar-2", "a smiling 12-year-old girl with red curly hair, freckles and a green hoodie");
-        avatar("avatar-3", "a 12-year-old black boy with glasses and a blue cap worn backwards");
-        avatar("avatar-4", "a 12-year-old asian girl with a black ponytail and an orange sweater");
-        avatar("avatar-5", "a 12-year-old boy with blond spiky hair and headphones around his neck");
-        avatar("avatar-6", "a 12-year-old girl with brown skin, braided hair and a purple jacket");
-        avatar("avatar-7", "a mischievous 12-year-old boy with messy black hair and a red scarf");
-        avatar("avatar-8", "a confident 12-year-old girl with short blond hair and a denim overall");
-
         // --- icons for the company activity types of the creation screen ---
         icon("type-resto", "a tasty burger with a chef hat");
         icon("type-jeux-video", "a video game controller with colorful buttons");
@@ -61,11 +52,6 @@ public class OneShotAssetsService {
         icon("ui-reputation", "two hands shaking in front of a small golden star");
         icon("ui-lexicon", "an open book with a small light bulb above it");
         icon("ui-problem", "a comic-style warning sign with an exclamation mark");
-    }
-
-    private static void avatar(String key, String who) {
-        CATALOG.put(key, "Profile picture (head and shoulders portrait) of " + who
-                + ", hero of a 2000s comic strip for kids, looking at the viewer.");
     }
 
     private static void icon(String key, String what) {
@@ -102,7 +88,7 @@ public class OneShotAssetsService {
         if (!images.isEnabled()) {
             return; // no key: the UI keeps its emoji fallbacks
         }
-        // Generate in parallel: a sequential run of ~20 images would keep the
+        // Generate in parallel: a sequential run of ~15 images would keep the
         // UI on emoji fallbacks for many minutes after the first boot.
         ExecutorService pool = Executors.newFixedThreadPool(4);
         AtomicInteger generated = new AtomicInteger();

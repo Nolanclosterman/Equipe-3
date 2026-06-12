@@ -1,16 +1,19 @@
 /**
- * Catalog of the one-shot generated assets (see OneShotAssetsService on the
- * backend). Each entry pairs the asset key of the generated PNG with an emoji
- * fallback used while the image does not exist yet (no OpenAI key, or the
- * one-shot generation is still running).
+ * Catalog of the UI assets. Avatars are static images shipped with the
+ * frontend (public/avatars/). Type/UI icons are one-shot generated assets
+ * (see OneShotAssetsService on the backend); each entry pairs the asset key
+ * of the generated PNG with an emoji fallback used while the image does not
+ * exist yet (no OpenAI key, or the one-shot generation is still running).
  */
 
 export interface AvatarChoice {
-  /** Asset key of the generated profile picture (avatar-1 … avatar-8). */
+  /** Stable key stored on the backend (avatar-1 … avatar-8). */
   key: string;
   /** Suggested avatar name (the player can type their own). */
   label: string;
   emoji: string;
+  /** Static profile picture bundled with the frontend (public/avatars/). */
+  image: string;
 }
 
 export interface TypeChoice {
@@ -23,14 +26,14 @@ export interface TypeChoice {
 }
 
 export const AVATARS: AvatarChoice[] = [
-  { key: 'avatar-1', label: 'Tom', emoji: '👦' },
-  { key: 'avatar-2', label: 'Léa', emoji: '👧' },
-  { key: 'avatar-3', label: 'Noah', emoji: '🧒' },
-  { key: 'avatar-4', label: 'Mei', emoji: '👧' },
-  { key: 'avatar-5', label: 'Max', emoji: '👦' },
-  { key: 'avatar-6', label: 'Awa', emoji: '👧' },
-  { key: 'avatar-7', label: 'Sacha', emoji: '🧒' },
-  { key: 'avatar-8', label: 'Emma', emoji: '👧' },
+  { key: 'avatar-1', label: 'Tom', emoji: '👦', image: 'avatars/avatar-1.png' },
+  { key: 'avatar-2', label: 'Léa', emoji: '👧', image: 'avatars/avatar-2.png' },
+  { key: 'avatar-3', label: 'Noah', emoji: '🧒', image: 'avatars/avatar-3.png' },
+  { key: 'avatar-4', label: 'Mei', emoji: '👧', image: 'avatars/avatar-4.png' },
+  { key: 'avatar-5', label: 'Max', emoji: '👦', image: 'avatars/avatar-5.png' },
+  { key: 'avatar-6', label: 'Awa', emoji: '👧', image: 'avatars/avatar-6.png' },
+  { key: 'avatar-7', label: 'Sacha', emoji: '🧒', image: 'avatars/avatar-7.png' },
+  { key: 'avatar-8', label: 'Emma', emoji: '👧', image: 'avatars/avatar-8.png' },
 ];
 
 export const TYPES: TypeChoice[] = [
