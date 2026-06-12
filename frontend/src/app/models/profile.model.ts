@@ -22,8 +22,21 @@ export interface GameEvent {
   problem: string;
   solutions: string[];
   character: string;
+  /** Portrait of the presenting character; '' until generated. */
+  characterImage: string;
+  /** Landscape illustration of the problem; '' until generated. */
   illustration: string;
+  /** One vignette per solution (same order); '' until generated. */
+  solutionIllustrations: string[];
   lexicon: LexiconEntry[];
+}
+
+/** GET /assets/manifest — the one-shot assets (avatars, UI icons). */
+export interface AssetManifest {
+  /** False when the backend has no OpenAI key (no images will ever come). */
+  enabled: boolean;
+  /** asset key (e.g. 'avatar-1', 'type-resto', 'ui-loader') -> image URL. */
+  assets: Record<string, string>;
 }
 
 /** Narrative consequence + indicator deltas, from prompts/event_scoring.md. */

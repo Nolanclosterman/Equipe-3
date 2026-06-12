@@ -9,8 +9,14 @@ services:
       # automatically for variable substitution).
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_IMAGE_MODEL: ${OPENAI_IMAGE_MODEL:-gpt-image-2}
     ports:
       - "8080:8080"
+    volumes:
+      # Persist generated images (avatars, icons, event illustrations) so the
+      # one-shot assets are not re-generated on every container start.
+      - generated-assets:/app/generated-assets
 
   frontend:
     build:
@@ -21,4 +27,7 @@ services:
       - backend
     ports:
       - "4200:80"
+
+volumes:
+  generated-assets:
 

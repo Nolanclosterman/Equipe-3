@@ -95,11 +95,13 @@ public class AnthropicGameService {
 
                 Réponds UNIQUEMENT avec un objet JSON valide (aucun texte autour, pas de ```), au format :
                 {
-                  "problem": "la description narrative du problème (2-4 phrases)",
-                  "solutions": ["solution 1", "solution 2", "solution 3"],
+                  "problem": "le problème en 2-3 phrases COURTES (40 mots maximum au total)",
+                  "solutions": ["3 solutions, chacune une seule phrase d'action de 12 mots maximum"],
                   "character": "qui présente le problème",
                   "lexicon": [{"term": "terme technique", "definition": "définition simple pour un enfant de 12 ans"}]
                 }
+                Le lexique doit contenir TOUS les mots compliqués qu'un enfant de 12 ans ne
+                comprendrait pas, qu'ils apparaissent dans le problème OU dans les solutions.
                 """.formatted(THEME_LIST, CHARACTER_LIST, loadPrompt("prompts/event_generation.md"));
 
         String user = "Contexte de l'entreprise :\n" + companyContext(company)
@@ -141,9 +143,13 @@ public class AnthropicGameService {
                 cohérent avec la décision et le contexte. Les effets peuvent être contradictoires
                 (par exemple +argent mais -écologie).
 
+                La décision peut être une des solutions proposées OU une idée que le joueur a
+                inventée lui-même : dans ce cas juge-la honnêtement (réaliste ? maligne ? risquée ?)
+                et fais-en une conséquence cohérente, sans la pénaliser juste parce qu'elle est inventée.
+
                 Réponds UNIQUEMENT avec un objet JSON valide (aucun texte autour, pas de ```), au format :
                 {
-                  "narrative": "la conséquence narrative de la décision (2-4 phrases, fun)",
+                  "narrative": "la conséquence narrative de la décision (2-3 phrases courtes, fun)",
                   "moneyDelta": 0,
                   "ecologyDelta": 0,
                   "ethicsDelta": 0

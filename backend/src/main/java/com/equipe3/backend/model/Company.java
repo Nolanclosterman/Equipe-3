@@ -2,6 +2,8 @@ package com.equipe3.backend.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The single company a player owns. Holds the indicators, the generated icon,
@@ -28,6 +30,13 @@ public class Company {
     private int eventNumber;
     private boolean gameOver;
     private final List<DecisionRecord> history = new ArrayList<>();
+
+    /**
+     * Portraits of the story characters, keyed by a slug of the character
+     * description. Cached so a recurring character keeps the same face across
+     * events. Concurrent because the IllustrationService fills it off-thread.
+     */
+    private final Map<String, String> characterImages = new ConcurrentHashMap<>();
 
     public Company() {
     }
@@ -118,5 +127,9 @@ public class Company {
 
     public List<DecisionRecord> getHistory() {
         return history;
+    }
+
+    public Map<String, String> getCharacterImages() {
+        return characterImages;
     }
 }

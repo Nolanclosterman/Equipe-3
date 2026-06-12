@@ -1,16 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProfileService } from '../../services/profile.service';
-
-interface CompanyType {
-  emoji: string;
-  label: string;
-  sample: string;
-}
+import { AVATARS, TYPES, TypeChoice, avatarByLabel } from '../../data/assets-catalog';
 
 /**
- * INITIALIZATION screen.
- * CAS 1: no company yet -> pick an avatar, a company type and a name.
+ * INITIALIZATION screen, following mockups/img.png ("CRÉE TA ENTREPRISE !").
+ * CAS 1: no company yet -> pick a profile picture, an activity (predefined
+ *        icon grid OR a custom activity the player writes) and a name.
  * CAS 2: company created -> generate the icon, then start the adventure
  *        (which also generates the first event).
  */
@@ -27,31 +23,46 @@ export class CompanyView {
 
   protected readonly store = inject(ProfileService);
   protected readonly newName = signal('');
-  protected readonly avatar = signal('👾');
-  protected readonly type = signal<string | null>(null);
+  protected readonly avatar = signal(AVATARS[0]);
+  /** Selected predefined activity, or 'custom' when writing one's own. */
+  protected readonly typeChoice = signal<string | null>(null);
+  protected readonly customType = signal('');
 
-  protected readonly avatars = ['👾', '🧑‍🚀', '🤖', '🦖', '🦸', '🧙', '🐉', '🦄'];
+  protected readonly avatars = AVATARS;
+  protected readonly types = TYPES;
 
-  protected readonly types: CompanyType[] = [
-    { emoji: '🍔', label: 'Resto rigolo', sample: 'Burger Galaxie' },
-    { emoji: '🎮', label: 'Jeux vidéo', sample: 'Pixel Power' },
-    { emoji: '👕', label: 'Mode', sample: 'Super Style' },
-    { emoji: '🤖', label: 'Robots', sample: 'RoboCopains' },
-    { emoji: '🌱', label: 'Éco & nature', sample: 'Planète Verte' },
-    { emoji: '🚀', label: 'Techno', sample: 'Fusée Tech' },
-  ];
+  /** The activity sent to the backend: predefined label or the custom text. */
+  protected readonly companyType = computed(() =>
+    this.typeChoice() === 'custom' ? this.customType().trim() || null : this.typeChoice()
+  );
 
-  protected pickType(t: CompanyType): void {
-    this.type.set(t.label);
+  protected readonly canCreate = computed(
+    () =>
+      this.newName().trim().length > 0 &&
+      this.typeChoice() !== null &&
+      (this.typeChoice() !== 'custom' || this.customType().trim().length > 0)
+  );
+
+  /** Avatar of the created company's owner, for the CAS 2 recap. */
+  protected readonly companyAvatar = computed(() =>
+    avatarByLabel(this.store.company()?.character ?? null)
+  );
+
+  protected pickType(t: TypeChoice): void {
+    this.typeChoice.set(t.label);
     if (!this.newName().trim()) {
       this.newName.set(t.sample);
     }
   }
 
   protected async create(): Promise<void> {
-    const name = this.newName().trim();
-    if (!name) return;
-    await this.store.createCompany(this.playerName(), name, this.type(), this.avatar());
+    if (!this.canCreate()) return;
+    await this.store.createCompany(
+      this.playerName(),
+      this.newName().trim(),
+      this.companyType(),
+      this.avatar().label
+    );
   }
 
   protected generateIcon(): Promise<void> {

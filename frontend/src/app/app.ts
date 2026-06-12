@@ -18,5 +18,6 @@ export class App implements OnInit {
 
   ngOnInit(): void {
     this.store.loadProfile(this.playerName());
+    this.store.loadManifest();
   }
 }
