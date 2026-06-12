@@ -1,0 +1,156 @@
+@if (company(); as company) {
+  <!-- Scoreboard -->
+  <header class="scoreboard">
+    <div class="brand">
+      <span class="brand-icon">
+        @if (company.iconUrl) {
+          <img [src]="company.iconUrl" [alt]="company.name" />
+        } @else {
+          {{ company.character || '👾' }}
+        }
+      </span>
+      <div class="brand-text">
+        <span class="brand-name">{{ company.name }}</span>
+        <span class="brand-count">Événement {{ company.eventNumber }} / {{ company.maxEvents }}</span>
+      </div>
+    </div>
+    <div class="gauges">
+      <app-score-gauge label="Argent" icon="💰" [value]="company.scores.money" color="#f59f00" />
+      <app-score-gauge label="Écologie" icon="🌱" [value]="company.scores.ecology" color="#37b24d" />
+      <app-score-gauge label="Image" icon="🤝" [value]="company.scores.ethics" color="#7048e8" />
+    </div>
+  </header>
+
+  @if (store.error(); as error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  @if (company.gameOver) {
+    <!-- END SCREEN -->
+    <section class="endscreen"
+      [class.win]="company.scores.money > 0 && company.scores.ecology > 0 && company.scores.ethics > 0">
+      @if (company.scores.money > 0 && company.scores.ecology > 0 && company.scores.ethics > 0) {
+        <h2>🏆 Bravo, super boss !</h2>
+        <p>Tu as tenu jusqu'au bout avec « {{ company.name }} ». Quelle aventure ! 🎉</p>
+      } @else {
+        <h2>💥 Aïe, game over !</h2>
+        <p>Un de tes indicateurs est tombé à zéro. Mais un vrai entrepreneur recommence ! 💪</p>
+      }
+      @if (outcome(); as out) {
+        <p class="final-narrative">{{ out.narrative }}</p>
+      }
+      <button class="btn btn-restart" (click)="store.deleteCompany(playerName())" [disabled]="store.loading()">
+        🔄 Recommencer une nouvelle entreprise
+      </button>
+    </section>
+  } @else {
+    <!-- TWO-PANEL GAME FRAME -->
+    <div class="game-frame">
+      <!-- LEFT: AI help chat -->
+      <section class="panel chat-panel">
+        <h3>🤖 Discute avec ton assistant</h3>
+        <div class="messages">
+          @for (msg of company.chat; track $index) {
+            <div class="message" [class.user]="msg.author === 'user'">
+              <span class="bubble">{{ msg.content }}</span>
+            </div>
+          } @empty {
+            <p class="empty">Demande de l'aide pour décider ! 💬</p>
+          }
+        </div>
+        <div class="composer">
+          <input
+            type="text"
+            placeholder="Pose ta question…"
+            [ngModel]="draft()"
+            (ngModelChange)="draft.set($event)"
+            (keyup.enter)="send()"
+            [disabled]="store.generating()"
+          />
+          <button class="btn btn-send" (click)="send()" [disabled]="store.generating() || !draft().trim()">➤</button>
+        </div>
+      </section>
+
+      <!-- RIGHT: problem + solutions + illustration -->
+      <section class="panel problem-panel">
+        @if (event(); as event) {
+          <div class="speaker">
+            <span class="speaker-avatar">🗣️</span>
+            <span class="speaker-name">{{ event.character }}</span>
+          </div>
+
+          <div class="illustration">
+            @if (event.illustration) {
+              <img [src]="event.illustration" alt="illustration" />
+            } @else {
+              <span>🖼️</span>
+            }
+          </div>
+
+          <p class="problem">{{ event.problem }}</p>
+
+          @if (event.lexicon.length) {
+            <details class="lexicon">
+              <summary>📚 Mots à connaître</summary>
+              <ul>
+                @for (entry of event.lexicon; track entry.term) {
+                  <li><strong>{{ entry.term }}</strong> : {{ entry.definition }}</li>
+                }
+              </ul>
+            </details>
+          }
+
+          <div class="solutions">
+            @for (sol of event.solutions; track sol) {
+              <button
+                type="button"
+                class="solution"
+                [class.checked]="selected() === sol"
+                [class.chosen]="decided() && selected() === sol"
+                [disabled]="decided() || store.generating()"
+                (click)="selected.set(sol)"
+              >
+                <span class="checkbox">{{ selected() === sol ? '☑️' : '⬜' }}</span>
+                <span class="solution-text">{{ sol }}</span>
+              </button>
+            }
+          </div>
+
+          @if (!decided()) {
+            <button class="btn btn-validate" (click)="validate()" [disabled]="!selected() || store.generating()">
+              ✅ Valider ma décision
+            </button>
+          }
+
+          @if (outcome(); as out) {
+            <div class="outcome">
+              <h4>📣 Conséquence</h4>
+              <p>{{ out.narrative }}</p>
+              <div class="deltas">
+                <span class="delta" [class.up]="out.moneyDelta > 0" [class.down]="out.moneyDelta < 0">💰 {{ delta(out.moneyDelta) }}</span>
+                <span class="delta" [class.up]="out.ecologyDelta > 0" [class.down]="out.ecologyDelta < 0">🌱 {{ delta(out.ecologyDelta) }}</span>
+                <span class="delta" [class.up]="out.ethicsDelta > 0" [class.down]="out.ethicsDelta < 0">🤝 {{ delta(out.ethicsDelta) }}</span>
+              </div>
+              <button class="btn btn-next" (click)="next()" [disabled]="store.generating()">
+                Suivant ➡️
+              </button>
+            </div>
+          }
+        } @else {
+          <p class="empty">Préparation de ton premier défi… 🎯</p>
+        }
+      </section>
+    </div>
+  }
+
+  <!-- Funny loading overlay -->
+  @if (store.generating()) {
+    <div class="loader-overlay">
+      <div class="loader-card">
+        <div class="loader-emoji">🤖</div>
+        <p class="loader-text">{{ loadingMessage() }}</p>
+        <div class="loader-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  }
+}

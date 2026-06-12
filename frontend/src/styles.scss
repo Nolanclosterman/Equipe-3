@@ -1,4 +1,4 @@
-/* Global styles */
+/* Global styles — fun, comic-book vibe for a 12-year-old (Kid Paddle style) */
 * {
   box-sizing: border-box;
 }
@@ -7,7 +7,12 @@ html,
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: #f1f5f9;
-  color: #1f2937;
+  font-family: 'Comic Sans MS', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #111;
+  background-color: #ffe8cc;
+  background-image: radial-gradient(#ffd8a8 1.5px, transparent 1.5px),
+    radial-gradient(#ffd8a8 1.5px, transparent 1.5px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+  min-height: 100vh;
 }

@@ -2,3 +2,4 @@ plan.md
 .idea
 backend/target
 backend/.DS_Store
+.env

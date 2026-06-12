@@ -1,5 +1,5 @@
 .app {
-  max-width: 860px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem 1rem 3rem;
   display: flex;
@@ -17,15 +17,27 @@
 
 .app-header h1 {
   margin: 0;
-  font-size: 1.6rem;
-  color: #1f2937;
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #111;
+  text-shadow: 3px 3px 0 #ffd23f;
+}
+
+.app-header h1 .sub {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #555;
+  text-shadow: none;
 }
 
 .player {
-  background: #e0e7ff;
-  color: #3730a3;
+  background: #111;
+  color: #fff;
   border-radius: 999px;
-  padding: 0.35rem 0.9rem;
-  font-weight: 600;
+  padding: 0.4rem 1rem;
+  font-weight: 800;
   font-size: 0.9rem;
 }

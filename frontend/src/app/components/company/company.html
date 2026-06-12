@@ -1,6 +1,6 @@
 <section class="frame">
   <header class="frame-header">
-    <h2>🏢 Entreprise</h2>
+    <h2>🏢 Crée ton entreprise</h2>
     <span class="badge">⭐ 1 seule entreprise par joueur</span>
   </header>
 
@@ -9,42 +9,89 @@
   }
 
   @if (!store.hasCompany()) {
-    <!-- CAS 1 — Aucune entreprise existante -->
+    <!-- CAS 1 — création -->
     <div class="case">
-      <h3>Cas 1 — Aucune entreprise existante</h3>
-      <div class="create-row">
-        <input
-          type="text"
-          placeholder="Nom de l'entreprise"
-          [ngModel]="newName()"
-          (ngModelChange)="newName.set($event)"
-          (keyup.enter)="create()"
-          [disabled]="store.loading()"
-        />
-        <button class="btn btn-create" (click)="create()" [disabled]="store.loading() || !newName().trim()">
-          ➕ Créer
-        </button>
+      <div class="block">
+        <h3>1. Choisis ton avatar</h3>
+        <div class="avatars">
+          @for (a of avatars; track a) {
+            <button
+              type="button"
+              class="avatar-btn"
+              [class.selected]="avatar() === a"
+              (click)="avatar.set(a)"
+            >{{ a }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>2. Quel genre d'entreprise ?</h3>
+        <div class="types">
+          @for (t of types; track t.label) {
+            <button
+              type="button"
+              class="type-btn"
+              [class.selected]="type() === t.label"
+              (click)="pickType(t)"
+            >
+              <span class="type-emoji">{{ t.emoji }}</span>
+              <span class="type-label">{{ t.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>3. Donne-lui un nom</h3>
+        <div class="create-row">
+          <input
+            type="text"
+            placeholder="Nom de l'entreprise"
+            [ngModel]="newName()"
+            (ngModelChange)="newName.set($event)"
+            (keyup.enter)="create()"
+            [disabled]="store.loading()"
+          />
+          <button class="btn btn-create" (click)="create()" [disabled]="store.loading() || !newName().trim()">
+            ➕ Créer mon entreprise
+          </button>
+        </div>
       </div>
     </div>
   } @else {
-    <!-- CAS 2 — Entreprise existante -->
-    <div class="case">
-      <h3>Cas 2 — Entreprise existante</h3>
-      <div class="existing">
-        <div class="identity">
+    <!-- CAS 2 — entreprise créée : icône + démarrage -->
+    <div class="case ready">
+      <div class="identity">
+        <span class="big-avatar">{{ store.company()!.character || '👾' }}</span>
+        <div>
           <span class="company-name">{{ store.company()!.name }}</span>
-          @if (store.isActive()) {
-            <span class="active">🟢 Entreprise active</span>
+          @if (store.company()!.type) {
+            <span class="company-type">{{ store.company()!.type }}</span>
           }
         </div>
-        <div class="actions">
-          <button class="btn btn-start" (click)="start()" [disabled]="store.loading()">
-            ▶ Démarrer
-          </button>
-          <button class="btn btn-delete" (click)="delete()" [disabled]="store.loading()">
-            🗑 Supprimer
-          </button>
+      </div>
+
+      <div class="icon-row">
+        <div class="icon-box">
+          @if (store.company()!.iconUrl) {
+            <img [src]="store.company()!.iconUrl!" [alt]="store.company()!.name" />
+          } @else {
+            <span class="placeholder">🎨 Pas encore d'icône</span>
+          }
         </div>
+        <button class="btn btn-generate" (click)="generateIcon()" [disabled]="store.loading()">
+          ✨ Générer l'icône
+        </button>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-start" (click)="start()" [disabled]="store.loading()">
+          🚀 Démarrer l'aventure !
+        </button>
+        <button class="btn btn-delete" (click)="delete()" [disabled]="store.loading()">
+          🗑 Supprimer
+        </button>
       </div>
     </div>
   }
