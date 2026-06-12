@@ -6,7 +6,7 @@
         @if (company.iconUrl) {
           <img [src]="company.iconUrl" [alt]="company.name" />
         } @else {
-          {{ company.character || '👾' }}
+          👾
         }
       </span>
       <div class="brand-text">
@@ -17,7 +17,7 @@
     <div class="gauges">
       <app-score-gauge label="Argent" icon="💰" [value]="company.scores.money" color="#f59f00" />
       <app-score-gauge label="Écologie" icon="🌱" [value]="company.scores.ecology" color="#37b24d" />
-      <app-score-gauge label="Image" icon="🤝" [value]="company.scores.ethics" color="#7048e8" />
+      <app-score-gauge label="Réputation" icon="🤝" [value]="company.scores.ethics" color="#7048e8" />
     </div>
   </header>
 
@@ -44,11 +44,20 @@
       </button>
     </section>
   } @else {
-    <!-- TWO-PANEL GAME FRAME -->
+    <!-- THREE-PANEL GAME FRAME (mockup img_1.png) -->
     <div class="game-frame">
-      <!-- LEFT: AI help chat -->
+      <!-- LEFT: AI assistant chat -->
       <section class="panel chat-panel">
-        <h3>🤖 Discute avec ton assistant</h3>
+        <h3 class="panel-title">
+          <span class="title-icon">
+            @if (store.asset('ui-assistant'); as url) {
+              <img [src]="url" alt="" />
+            } @else {
+              🤖
+            }
+          </span>
+          Ton assistant
+        </h3>
         <div class="messages">
           @for (msg of company.chat; track $index) {
             <div class="message" [class.user]="msg.author === 'user'">
@@ -71,56 +80,42 @@
         </div>
       </section>
 
-      <!-- RIGHT: problem + solutions + illustration -->
+      <!-- CENTER: illustrated problem presented by a character -->
       <section class="panel problem-panel">
         @if (event(); as event) {
-          <div class="speaker">
-            <span class="speaker-avatar">🗣️</span>
-            <span class="speaker-name">{{ event.character }}</span>
-          </div>
-
           <div class="illustration">
             @if (event.illustration) {
-              <img [src]="event.illustration" alt="illustration" />
+              <img [src]="event.illustration" alt="Illustration du problème" />
             } @else {
-              <span>🖼️</span>
+              <span class="illustration-wait">🎨 L'illustration arrive…</span>
             }
           </div>
 
-          <p class="problem">{{ event.problem }}</p>
-
-          @if (event.lexicon.length) {
-            <details class="lexicon">
-              <summary>📚 Mots à connaître</summary>
-              <ul>
-                @for (entry of event.lexicon; track entry.term) {
-                  <li><strong>{{ entry.term }}</strong> : {{ entry.definition }}</li>
+          <div class="problem-block">
+            <h3 class="panel-title">
+              <span class="title-icon">
+                @if (store.asset('ui-problem'); as url) {
+                  <img [src]="url" alt="" />
+                } @else {
+                  ⚠️
                 }
-              </ul>
-            </details>
-          }
-
-          <div class="solutions">
-            @for (sol of event.solutions; track sol) {
-              <button
-                type="button"
-                class="solution"
-                [class.checked]="selected() === sol"
-                [class.chosen]="decided() && selected() === sol"
-                [disabled]="decided() || store.generating()"
-                (click)="selected.set(sol)"
-              >
-                <span class="checkbox">{{ selected() === sol ? '☑️' : '⬜' }}</span>
-                <span class="solution-text">{{ sol }}</span>
-              </button>
-            }
+              </span>
+              Problème
+            </h3>
+            <div class="speaker">
+              <span class="speaker-avatar">
+                @if (event.characterImage) {
+                  <img [src]="event.characterImage" [alt]="event.character" />
+                } @else {
+                  🗣️
+                }
+              </span>
+              <div class="speaker-words">
+                <span class="speaker-name">{{ event.character }}</span>
+                <p class="problem">{{ event.problem }}</p>
+              </div>
+            </div>
           </div>
-
-          @if (!decided()) {
-            <button class="btn btn-validate" (click)="validate()" [disabled]="!selected() || store.generating()">
-              ✅ Valider ma décision
-            </button>
-          }
 
           @if (outcome(); as out) {
             <div class="outcome">
@@ -132,7 +127,7 @@
                 <span class="delta" [class.up]="out.ethicsDelta > 0" [class.down]="out.ethicsDelta < 0">🤝 {{ delta(out.ethicsDelta) }}</span>
               </div>
               <button class="btn btn-next" (click)="next()" [disabled]="store.generating()">
-                Suivant ➡️
+                Tour suivant ➡️
               </button>
             </div>
           }
@@ -140,14 +135,106 @@
           <p class="empty">Préparation de ton premier défi… 🎯</p>
         }
       </section>
+
+      <!-- RIGHT: lexicon (mots à connaître, from the problem AND the solutions) -->
+      <section class="panel lexicon-panel">
+        <h3 class="panel-title">
+          <span class="title-icon">
+            @if (store.asset('ui-lexicon'); as url) {
+              <img [src]="url" alt="" />
+            } @else {
+              📚
+            }
+          </span>
+          Lexique
+        </h3>
+        @if (event()?.lexicon?.length) {
+          <ul class="lexicon">
+            @for (entry of event()!.lexicon; track entry.term) {
+              <li><strong>{{ entry.term }}</strong> : {{ entry.definition }}</li>
+            }
+          </ul>
+        } @else {
+          <p class="empty">Pas de mot compliqué cette fois ! 🎉</p>
+        }
+      </section>
     </div>
+
+    <!-- BOTTOM: illustrated solution cards + the player's own idea -->
+    @if (event(); as event) {
+      <section class="solutions-row">
+        @for (sol of event.solutions; track sol; let i = $index) {
+          <button
+            type="button"
+            class="solution-card"
+            [class.checked]="selected() === sol"
+            [class.chosen]="decided() && selected() === sol"
+            [disabled]="decided() || store.generating()"
+            (click)="selected.set(sol)"
+          >
+            <span class="solution-illustration">
+              @if (event.solutionIllustrations[i]) {
+                <img [src]="event.solutionIllustrations[i]" alt="" />
+              } @else {
+                <span class="solution-number">{{ i + 1 }}</span>
+              }
+            </span>
+            <span class="solution-text">{{ sol }}</span>
+          </button>
+        }
+
+        <!-- the player can propose a solution the AI did not generate -->
+        <div
+          class="solution-card custom-card"
+          [class.checked]="selected() === CUSTOM"
+          [class.chosen]="decided() && selected() === CUSTOM"
+        >
+          <button
+            type="button"
+            class="custom-header"
+            [disabled]="decided() || store.generating()"
+            (click)="selected.set(CUSTOM)"
+          >
+            <span class="solution-illustration">
+              @if (store.asset('type-custom'); as url) {
+                <img [src]="url" alt="" />
+              } @else {
+                💡
+              }
+            </span>
+            <span class="solution-text">Propose ta propre idée !</span>
+          </button>
+          @if (selected() === CUSTOM && !decided()) {
+            <textarea
+              rows="2"
+              placeholder="Écris ton idée ici…"
+              [ngModel]="customSolution()"
+              (ngModelChange)="customSolution.set($event)"
+              [disabled]="store.generating()"
+            ></textarea>
+          }
+        </div>
+      </section>
+
+      @if (!decided()) {
+        <button class="btn btn-validate" (click)="validate()" [disabled]="!canValidate() || store.generating()">
+          ✅ Valider ma décision
+        </button>
+      }
+    }
   }
 
   <!-- Funny loading overlay -->
   @if (store.generating()) {
     <div class="loader-overlay">
       <div class="loader-card">
-        <div class="loader-emoji">🤖</div>
+        <div class="loader-emoji">
+          @if (store.asset('ui-loader'); as url) {
+            <img [src]="url" alt="" />
+          } @else {
+            🤖
+          }
+        </div>
         <p class="loader-text">{{ loadingMessage() }}</p>
         <div class="loader-dots"><span></span><span></span><span></span></div>
       </div>

@@ -22,10 +22,13 @@ public class ProfileService {
 
     private final ProfileRepository repository;
     private final AnthropicGameService ai;
+    private final IllustrationService illustrations;
 
-    public ProfileService(ProfileRepository repository, AnthropicGameService ai) {
+    public ProfileService(ProfileRepository repository, AnthropicGameService ai,
+                          IllustrationService illustrations) {
         this.repository = repository;
         this.ai = ai;
+        this.illustrations = illustrations;
     }
 
     /** GET /profiles/{name} — returns (and lazily creates) the connected profile. */
@@ -81,11 +84,14 @@ public class ProfileService {
     /** POST /profiles/{name}/company/icon — (re)generate the company icon. */
     public Company generateIcon(String name) {
         Company company = requireCompany(name);
-        // Placeholder deterministic icon based on the company name; swap for the
-        // real generative asset service later.
-        String seed = company.getName() == null ? "company" : company.getName().trim();
-        company.setIconUrl("https://api.dicebear.com/9.x/shapes/svg?seed="
-                + java.net.URLEncoder.encode(seed, java.nio.charset.StandardCharsets.UTF_8));
+        if (illustrations.isEnabled()) {
+            company.setIconUrl(illustrations.companyIcon(company));
+        } else {
+            // No OpenAI key: deterministic placeholder icon from the name.
+            String seed = company.getName() == null ? "company" : company.getName().trim();
+            company.setIconUrl("https://api.dicebear.com/9.x/shapes/svg?seed="
+                    + java.net.URLEncoder.encode(seed, java.nio.charset.StandardCharsets.UTF_8));
+        }
         return company;
     }
 
@@ -103,6 +109,9 @@ public class ProfileService {
         company.setCurrentEvent(event);
         company.setLastOutcome(null);
         company.setEventNumber(company.getEventNumber() + 1);
+        // Illustrate the event, the solutions and the presenting character in
+        // the background; the frontend polls until the image URLs appear.
+        illustrations.illustrateEvent(company, event);
         return company;
     }
 

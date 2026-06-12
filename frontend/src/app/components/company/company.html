@@ -1,69 +1,130 @@
 <section class="frame">
-  <header class="frame-header">
-    <h2>🏢 Crée ton entreprise</h2>
-    <span class="badge">⭐ 1 seule entreprise par joueur</span>
-  </header>
-
   @if (store.error(); as error) {
     <p class="error" role="alert">{{ error }}</p>
   }
 
   @if (!store.hasCompany()) {
-    <!-- CAS 1 — création -->
-    <div class="case">
-      <div class="block">
-        <h3>1. Choisis ton avatar</h3>
-        <div class="avatars">
-          @for (a of avatars; track a) {
-            <button
-              type="button"
-              class="avatar-btn"
-              [class.selected]="avatar() === a"
-              (click)="avatar.set(a)"
-            >{{ a }}</button>
-          }
-        </div>
+    <!-- CAS 1 — création (mockup "CRÉE TA ENTREPRISE !") -->
+    <header class="create-header">
+      <span class="step-badge">1</span>
+      <div>
+        <h2>Crée ta entreprise&nbsp;!</h2>
+        <p class="subtitle">Choisis ton profil, ton activité et donne un nom à ton entreprise.</p>
       </div>
+    </header>
 
-      <div class="block">
-        <h3>2. Quel genre d'entreprise ?</h3>
-        <div class="types">
-          @for (t of types; track t.label) {
-            <button
-              type="button"
-              class="type-btn"
-              [class.selected]="type() === t.label"
-              (click)="pickType(t)"
-            >
-              <span class="type-emoji">{{ t.emoji }}</span>
-              <span class="type-label">{{ t.label }}</span>
-            </button>
-          }
+    <div class="create-grid">
+      <!-- left column: avatar + name -->
+      <div class="column">
+        <div class="panel">
+          <h3 class="panel-title">Ton avatar</h3>
+          <div class="avatars">
+            @for (a of avatars; track a.key) {
+              <button
+                type="button"
+                class="avatar-btn"
+                [class.selected]="avatar().key === a.key"
+                [title]="a.label"
+                (click)="avatar.set(a)"
+              >
+                @if (store.asset(a.key); as url) {
+                  <img [src]="url" [alt]="a.label" />
+                } @else {
+                  <span class="avatar-emoji">{{ a.emoji }}</span>
+                }
+                <span class="avatar-name">{{ a.label }}</span>
+              </button>
+            }
+          </div>
         </div>
-      </div>
 
-      <div class="block">
-        <h3>3. Donne-lui un nom</h3>
-        <div class="create-row">
+        <div class="panel">
+          <h3 class="panel-title">Nom de ton entreprise</h3>
           <input
+            class="name-input"
             type="text"
-            placeholder="Nom de l'entreprise"
+            placeholder="Ex : Burger Galaxie"
             [ngModel]="newName()"
             (ngModelChange)="newName.set($event)"
             (keyup.enter)="create()"
             [disabled]="store.loading()"
           />
-          <button class="btn btn-create" (click)="create()" [disabled]="store.loading() || !newName().trim()">
-            ➕ Créer mon entreprise
-          </button>
+          <p class="hint">💡 Astuce : un nom court et rigolo, c'est plus facile à retenir !</p>
         </div>
+      </div>
+
+      <!-- right column: activity grid + custom activity -->
+      <div class="column">
+        <div class="panel">
+          <h3 class="panel-title">Choisis ton activité</h3>
+          <div class="types">
+            @for (t of types; track t.key) {
+              <button
+                type="button"
+                class="type-btn"
+                [class.selected]="typeChoice() === t.label"
+                (click)="pickType(t)"
+              >
+                <span class="type-icon">
+                  @if (store.asset(t.key); as url) {
+                    <img [src]="url" [alt]="t.label" />
+                  } @else {
+                    {{ t.emoji }}
+                  }
+                </span>
+                <span class="type-label">{{ t.label }}</span>
+              </button>
+            }
+            <!-- custom activity the player invents -->
+            <button
+              type="button"
+              class="type-btn"
+              [class.selected]="typeChoice() === 'custom'"
+              (click)="typeChoice.set('custom')"
+            >
+              <span class="type-icon">
+                @if (store.asset('type-custom'); as url) {
+                  <img [src]="url" alt="Ton idée" />
+                } @else {
+                  ✏️
+                }
+              </span>
+              <span class="type-label">Ton idée&nbsp;!</span>
+            </button>
+          </div>
+
+          @if (typeChoice() === 'custom') {
+            <input
+              class="name-input custom-type-input"
+              type="text"
+              placeholder="Décris ton activité (ex : location de trottinettes volantes)"
+              [ngModel]="customType()"
+              (ngModelChange)="customType.set($event)"
+              [disabled]="store.loading()"
+            />
+          }
+        </div>
+
+        <button class="btn btn-create" (click)="create()" [disabled]="store.loading() || !canCreate()">
+          🚀 CRÉER MA BOÎTE !
+        </button>
       </div>
     </div>
   } @else {
     <!-- CAS 2 — entreprise créée : icône + démarrage -->
     <div class="case ready">
       <div class="identity">
-        <span class="big-avatar">{{ store.company()!.character || '👾' }}</span>
+        <span class="big-avatar">
+          @if (companyAvatar(); as a) {
+            @if (store.asset(a.key); as url) {
+              <img [src]="url" [alt]="a.label" />
+            } @else {
+              {{ a.emoji }}
+            }
+          } @else {
+            {{ store.company()!.character || '👾' }}
+          }
+        </span>
         <div>
           <span class="company-name">{{ store.company()!.name }}</span>
           @if (store.company()!.type) {
@@ -93,6 +154,10 @@
           🗑 Supprimer
         </button>
       </div>
+
+      @if (store.loading()) {
+        <p class="hint">⏳ Préparation en cours…</p>
+      }
     </div>
   }
 </section>

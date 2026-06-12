@@ -1,7 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { Company, Profile } from '../models/profile.model';
+import { AssetManifest, Company, Profile } from '../models/profile.model';
 
 const API_BASE = '/api';
 
@@ -17,6 +17,7 @@ export class ProfileService {
   private readonly _loading = signal(false);
   private readonly _generating = signal(false);
   private readonly _error = signal<string | null>(null);
+  private readonly _manifest = signal<AssetManifest>({ enabled: false, assets: {} });
 
   // --- public read-only views ---
   readonly profile = this._profile.asReadonly();
@@ -28,8 +29,45 @@ export class ProfileService {
   readonly company = computed<Company | null>(() => this._profile()?.company ?? null);
   readonly hasCompany = computed(() => this.company() !== null);
   readonly isActive = computed(() => this.company()?.active ?? false);
+  /** True when the backend can generate images (OpenAI key configured). */
+  readonly imagesEnabled = computed(() => this._manifest().enabled);
 
   constructor(private readonly http: HttpClient) {}
+
+  /** URL of a one-shot asset ('avatar-1', 'ui-loader', …) or null if absent. */
+  asset(key: string): string | null {
+    return this._manifest().assets[key] ?? null;
+  }
+
+  /** GET /assets/manifest — which generated avatars / UI icons exist. */
+  async loadManifest(): Promise<void> {
+    try {
+      this._manifest.set(
+        await firstValueFrom(this.http.get<AssetManifest>(`${API_BASE}/assets/manifest`))
+      );
+    } catch {
+      // No manifest: keep the emoji fallbacks, nothing to report to the player.
+    }
+  }
+
+  /**
+   * Silent profile refresh used to poll for the event images generated in the
+   * background. Never touches the loading/error flags, and is skipped when a
+   * regular action is in flight to avoid overwriting fresher local state.
+   */
+  async refreshQuietly(name: string): Promise<void> {
+    if (this._loading() || this._generating()) return;
+    try {
+      const profile = await firstValueFrom(
+        this.http.get<Profile>(`${API_BASE}/profiles/${encodeURIComponent(name)}`)
+      );
+      if (!this._loading() && !this._generating()) {
+        this._profile.set(profile);
+      }
+    } catch {
+      // Polling only: a failed refresh is harmless, the next tick retries.
+    }
+  }
 
   /** GET /profiles/{name} — load the connected profile and active company. */
   async loadProfile(name: string): Promise<void> {

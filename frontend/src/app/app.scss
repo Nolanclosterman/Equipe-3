@@ -1,10 +1,10 @@
 .app {
-  max-width: 960px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 1.5rem 1rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .app-header {
@@ -15,26 +15,37 @@
   flex-wrap: wrap;
 }
 
-.app-header h1 {
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: 900;
-  letter-spacing: 1px;
-  color: #111;
-  text-shadow: 3px 3px 0 #ffd23f;
+/* Red comic logo block, as on the mockups. */
+.logo {
+  display: inline-flex;
+  flex-direction: column;
+  background: #e03131;
+  border: 4px solid #1d1d35;
+  border-radius: 14px;
+  padding: 0.5rem 1rem 0.6rem;
+  box-shadow: 5px 5px 0 #1d1d35;
+  transform: rotate(-1.5deg);
 }
 
-.app-header h1 .sub {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  color: #555;
-  text-shadow: none;
+.logo h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #1d1d35;
+}
+
+.logo .sub {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #ffd23f;
 }
 
 .player {
-  background: #111;
+  background: #1d1d35;
   color: #fff;
   border-radius: 999px;
   padding: 0.4rem 1rem;
