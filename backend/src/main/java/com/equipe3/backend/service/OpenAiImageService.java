@@ -29,11 +29,17 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Generates the game's visual assets with the OpenAI image API (gpt-image-2).
+ * Generates the game's visual assets with the OpenAI image API. The default
+ * model is {@code gpt-image-1-mini}: noticeably faster (and cheaper) than the
+ * bigger models, at the cost of some polish — the right tradeoff for kids
+ * waiting on their next event.
  *
- * Every call sends the project's moodboard (the 2000s bande dessinée mockups in
- * {@code resources/moodboard/}) as base64-encoded reference images through the
- * {@code /v1/images/edits} endpoint so generated assets match the app's style.
+ * Reference images (the 2000s bande dessinée moodboard in
+ * {@code resources/moodboard/}) are only sent for the one-shot assets, through
+ * the {@code /v1/images/edits} endpoint. Runtime images (event illustrations,
+ * solution vignettes, character portraits, company icons) skip the moodboard
+ * and use the plain {@code /v1/images/generations} endpoint for latency; the
+ * {@link #STYLE} prompt suffix keeps them visually consistent.
  *
  * Icons and character portraits are requested on a plain white background and
  * the white is then removed (flood fill from the borders) to obtain transparent
@@ -55,8 +61,10 @@ public class OpenAiImageService {
             + "bold black outlines, flat vivid colors, slight halftone texture, fun and kid-friendly, "
             + "matching the reference moodboard images. No text, no letters, no watermark.";
 
+    // Standard size supported by every gpt-image model. Runtime images all use
+    // 1024x1024 / quality "low": the fastest supported combination. Custom
+    // flexible sizes (e.g. 896x736) are deliberately avoided.
     public static final String SQUARE = "1024x1024";
-    public static final String LANDSCAPE = "1536x1024";
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient http = HttpClient.newBuilder()
@@ -69,7 +77,7 @@ public class OpenAiImageService {
 
     public OpenAiImageService(
             @Value("${openai.api-key:}") String apiKey,
-            @Value("${openai.image-model:gpt-image-2}") String model) {
+            @Value("${openai.image-model:gpt-image-1-mini}") String model) {
         this.apiKey = apiKey == null ? "" : apiKey.trim();
         this.model = model;
         if (isEnabled()) {
@@ -90,11 +98,15 @@ public class OpenAiImageService {
      * Generate one PNG image.
      *
      * @param prompt        what to draw (the BD style suffix is appended)
-     * @param size          {@link #SQUARE} or {@link #LANDSCAPE}
+     * @param size          a standard size, e.g. {@link #SQUARE}
      * @param quality       "low" for fast in-game assets, "medium"/"high" for one-shot assets
      * @param transparent   ask for a plain white background then strip it to transparency
+     * @param useMoodboard  send the moodboard as reference images (slower edits
+     *                      endpoint; reserved for the one-shot assets) instead
+     *                      of the faster generations endpoint
      */
-    public byte[] generate(String prompt, String size, String quality, boolean transparent) {
+    public byte[] generate(String prompt, String size, String quality, boolean transparent,
+                           boolean useMoodboard) {
         if (!isEnabled()) {
             throw new IllegalStateException("OpenAI image generation is disabled (no API key).");
         }
@@ -103,24 +115,32 @@ public class OpenAiImageService {
             fullPrompt += "\nThe subject is centered on a plain solid pure white background "
                     + "(#FFFFFF), with nothing else around it.";
         }
-        byte[] png = request(fullPrompt, size, quality);
+        byte[] png = request(fullPrompt, size, quality, useMoodboard);
         return transparent ? removeWhiteBackground(png) : png;
     }
 
     // ----------------------------------------------------------------- HTTP
 
-    /** Calls the API, falling back from the configured model to gpt-image-1 if rejected. */
-    private byte[] request(String prompt, String size, String quality) {
+    /**
+     * Calls the API, falling back from the configured model to gpt-image-1 and
+     * from the requested size to "auto" when rejected. Failed attempts are
+     * fast 4xx round-trips, so the fallback chain costs little.
+     */
+    private byte[] request(String prompt, String size, String quality, boolean useMoodboard) {
+        boolean edit = useMoodboard && !moodboard.isEmpty();
         Set<String> models = new LinkedHashSet<>(List.of(model, "gpt-image-1"));
+        Set<String> sizes = new LinkedHashSet<>(List.of(size, "auto"));
         RuntimeException last = null;
         for (String m : models) {
-            try {
-                return moodboard.isEmpty()
-                        ? requestGeneration(m, prompt, size, quality)
-                        : requestEdit(m, prompt, size, quality);
-            } catch (RuntimeException e) {
-                log.warn("Image request with model '{}' failed: {}", m, e.getMessage());
-                last = e;
+            for (String s : sizes) {
+                try {
+                    return edit
+                            ? requestEdit(m, prompt, s, quality)
+                            : requestGeneration(m, prompt, s, quality);
+                } catch (RuntimeException e) {
+                    log.warn("Image request with model '{}' size '{}' failed: {}", m, s, e.getMessage());
+                    last = e;
+                }
             }
         }
         throw last;
@@ -152,7 +172,7 @@ public class OpenAiImageService {
         return send(request);
     }
 
-    /** images/generations, used only when no moodboard is bundled. */
+    /** images/generations: the fast path used for all runtime images. */
     private byte[] requestGeneration(String model, String prompt, String size, String quality) {
         ObjectNode payload = mapper.createObjectNode()
                 .put("model", model)
@@ -280,10 +300,40 @@ public class OpenAiImageService {
     private void loadMoodboard() {
         for (String name : List.of("moodboard/moodboard-creation.png", "moodboard/moodboard-game.png")) {
             try {
-                moodboard.add(new ClassPathResource(name).getContentAsByteArray());
+                moodboard.add(downscale(new ClassPathResource(name).getContentAsByteArray(), 512));
             } catch (Exception e) {
                 log.warn("Could not load moodboard image {}.", name, e);
             }
+        }
+    }
+
+    /**
+     * Shrinks a reference image so its longest side is at most {@code max}
+     * pixels. The moodboard is re-uploaded with EVERY API call, and the style
+     * survives downscaling fine — sending the full-size mockups (~2 MB each)
+     * just slows every generation down.
+     */
+    private static byte[] downscale(byte[] png, int max) {
+        try {
+            BufferedImage src = ImageIO.read(new ByteArrayInputStream(png));
+            int w = src.getWidth(), h = src.getHeight();
+            if (Math.max(w, h) <= max) {
+                return png;
+            }
+            double scale = (double) max / Math.max(w, h);
+            int nw = (int) Math.round(w * scale), nh = (int) Math.round(h * scale);
+            BufferedImage out = new BufferedImage(nw, nh, BufferedImage.TYPE_INT_RGB);
+            var g = out.createGraphics();
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(src, 0, 0, nw, nh, null);
+            g.dispose();
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            ImageIO.write(out, "png", bytes);
+            return bytes.toByteArray();
+        } catch (Exception e) {
+            log.warn("Could not downscale a moodboard image, keeping it full size.", e);
+            return png;
         }
     }
 }

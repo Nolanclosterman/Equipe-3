@@ -8,7 +8,7 @@
 export interface AvatarChoice {
   /** Asset key of the generated profile picture (avatar-1 … avatar-8). */
   key: string;
-  /** Player-facing name, also sent to the AI as the player's avatar. */
+  /** Suggested avatar name (the player can type their own). */
   label: string;
   emoji: string;
 }
@@ -42,7 +42,7 @@ export const TYPES: TypeChoice[] = [
   { key: 'type-techno', label: 'Techno', emoji: '🚀', sample: 'Fusée Tech' },
 ];
 
-/** Finds the avatar entry from the stored character label (or null). */
-export function avatarByLabel(label: string | null): AvatarChoice | null {
-  return AVATARS.find((a) => a.label === label) ?? null;
+/** Finds the avatar entry from its asset key (or null). */
+export function avatarByKey(key: string | null): AvatarChoice | null {
+  return AVATARS.find((a) => a.key === key) ?? null;
 }

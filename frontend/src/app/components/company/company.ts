@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProfileService } from '../../services/profile.service';
-import { AVATARS, TYPES, TypeChoice, avatarByLabel } from '../../data/assets-catalog';
+import { AVATARS, AvatarChoice, TYPES, TypeChoice, avatarByKey } from '../../data/assets-catalog';
 
 /**
  * INITIALIZATION screen, following mockups/img.png ("CRÉE TA ENTREPRISE !").
@@ -24,6 +24,8 @@ export class CompanyView {
   protected readonly store = inject(ProfileService);
   protected readonly newName = signal('');
   protected readonly avatar = signal(AVATARS[0]);
+  /** Name the player gives their avatar; pre-filled, freely editable. */
+  protected readonly avatarName = signal(AVATARS[0].label);
   /** Selected predefined activity, or 'custom' when writing one's own. */
   protected readonly typeChoice = signal<string | null>(null);
   protected readonly customType = signal('');
@@ -39,14 +41,24 @@ export class CompanyView {
   protected readonly canCreate = computed(
     () =>
       this.newName().trim().length > 0 &&
+      this.avatarName().trim().length > 0 &&
       this.typeChoice() !== null &&
       (this.typeChoice() !== 'custom' || this.customType().trim().length > 0)
   );
 
   /** Avatar of the created company's owner, for the CAS 2 recap. */
   protected readonly companyAvatar = computed(() =>
-    avatarByLabel(this.store.company()?.character ?? null)
+    avatarByKey(this.store.company()?.avatar ?? null)
   );
+
+  protected pickAvatar(a: AvatarChoice): void {
+    const previous = this.avatar();
+    this.avatar.set(a);
+    // Refresh the suggested name unless the player already typed their own.
+    if (!this.avatarName().trim() || this.avatarName() === previous.label) {
+      this.avatarName.set(a.label);
+    }
+  }
 
   protected pickType(t: TypeChoice): void {
     this.typeChoice.set(t.label);
@@ -61,12 +73,9 @@ export class CompanyView {
       this.playerName(),
       this.newName().trim(),
       this.companyType(),
-      this.avatar().label
+      this.avatarName().trim(),
+      this.avatar().key
     );
-  }
-
-  protected generateIcon(): Promise<void> {
-    return this.store.generateIcon(this.playerName());
   }
 
   protected async start(): Promise<void> {

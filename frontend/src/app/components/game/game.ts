@@ -125,6 +125,18 @@ export class Game implements OnDestroy {
     return this.store.generateEvent(this.playerName());
   }
 
+  /** Abandon the current company (after confirmation) to start over. */
+  protected async quit(): Promise<void> {
+    const sure = window.confirm(
+      'Tu veux vraiment abandonner « ' +
+        (this.company()?.name ?? 'ton entreprise') +
+        ' » et recommencer une nouvelle aventure ?'
+    );
+    if (sure) {
+      await this.store.deleteCompany(this.playerName());
+    }
+  }
+
   protected async send(): Promise<void> {
     const message = this.draft().trim();
     if (!message) return;
@@ -146,16 +158,21 @@ export class Game implements OnDestroy {
     );
   }
 
-  private syncImagePolling(): void {
+  /** True while something displayed on this screen is still being generated:
+   *  the event images, or the company logo auto-created at game start. */
+  private waitingOnImages(): boolean {
     const event = this.event();
-    const shouldPoll =
-      this.store.imagesEnabled() && !!event && this.missingImages(event) && this.pollsLeft > 0;
+    const logoMissing = !this.company()?.iconUrl;
+    return (!!event && this.missingImages(event)) || logoMissing;
+  }
+
+  private syncImagePolling(): void {
+    const shouldPoll = this.store.imagesEnabled() && this.waitingOnImages() && this.pollsLeft > 0;
     if (shouldPoll && !this.imagePolling) {
       this.imagePolling = setInterval(() => {
         this.pollsLeft--;
         this.store.refreshQuietly(this.playerName());
-        const current = this.event();
-        if (this.pollsLeft <= 0 || !current || !this.missingImages(current)) {
+        if (this.pollsLeft <= 0 || !this.waitingOnImages()) {
           this.stopImagePolling();
         }
       }, 2500);

@@ -22,4 +22,11 @@ public final class ApiExceptions {
             super(message);
         }
     }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public static class BadRequestException extends RuntimeException {
+        public BadRequestException(String message) {
+            super(message);
+        }
+    }
 }

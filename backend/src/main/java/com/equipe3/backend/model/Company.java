@@ -3,6 +3,7 @@ package com.equipe3.backend.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -18,7 +19,10 @@ public class Company {
 
     private String name;
     private String type;
+    /** Name the player gave to their avatar (free text, moderated). */
     private String character;
+    /** One-shot asset key of the chosen avatar picture (e.g. "avatar-3"). */
+    private String avatar;
     private boolean active;
     private String iconUrl;
     private final Scores scores = new Scores();
@@ -37,6 +41,16 @@ public class Company {
      * events. Concurrent because the IllustrationService fills it off-thread.
      */
     private final Map<String, String> characterImages = new ConcurrentHashMap<>();
+
+    /**
+     * The next event, prefetched in the background as soon as the player
+     * decides on the current one so the "Tour suivant" transition is instant.
+     * {@code nextEventFuture} completes when the AI returns the text;
+     * {@code nextEvent} then accumulates the illustration URLs until the event
+     * is promoted to {@code currentEvent}. Guarded by {@code synchronized(this)}.
+     */
+    private CompletableFuture<GameEvent> nextEventFuture;
+    private GameEvent nextEvent;
 
     public Company() {
     }
@@ -67,6 +81,14 @@ public class Company {
 
     public void setCharacter(String character) {
         this.character = character;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public boolean isActive() {
@@ -131,5 +153,21 @@ public class Company {
 
     public Map<String, String> getCharacterImages() {
         return characterImages;
+    }
+
+    public CompletableFuture<GameEvent> getNextEventFuture() {
+        return nextEventFuture;
+    }
+
+    public void setNextEventFuture(CompletableFuture<GameEvent> nextEventFuture) {
+        this.nextEventFuture = nextEventFuture;
+    }
+
+    public GameEvent getNextEvent() {
+        return nextEvent;
+    }
+
+    public void setNextEvent(GameEvent nextEvent) {
+        this.nextEvent = nextEvent;
     }
 }

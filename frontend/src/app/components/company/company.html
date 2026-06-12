@@ -25,17 +25,25 @@
                 class="avatar-btn"
                 [class.selected]="avatar().key === a.key"
                 [title]="a.label"
-                (click)="avatar.set(a)"
+                (click)="pickAvatar(a)"
               >
                 @if (store.asset(a.key); as url) {
                   <img [src]="url" [alt]="a.label" />
                 } @else {
                   <span class="avatar-emoji">{{ a.emoji }}</span>
                 }
-                <span class="avatar-name">{{ a.label }}</span>
               </button>
             }
           </div>
+          <input
+            class="name-input avatar-name-input"
+            type="text"
+            placeholder="Le nom de ton avatar"
+            [ngModel]="avatarName()"
+            (ngModelChange)="avatarName.set($event)"
+            [disabled]="store.loading()"
+          />
+          <p class="hint">✏️ Tu peux changer le nom de ton avatar !</p>
         </div>
 
         <div class="panel">
@@ -122,29 +130,21 @@
               {{ a.emoji }}
             }
           } @else {
-            {{ store.company()!.character || '👾' }}
+            👾
           }
         </span>
         <div>
           <span class="company-name">{{ store.company()!.name }}</span>
+          @if (store.company()!.character) {
+            <span class="company-boss">Dirigée par {{ store.company()!.character }}</span>
+          }
           @if (store.company()!.type) {
             <span class="company-type">{{ store.company()!.type }}</span>
           }
         </div>
       </div>
 
-      <div class="icon-row">
-        <div class="icon-box">
-          @if (store.company()!.iconUrl) {
-            <img [src]="store.company()!.iconUrl!" [alt]="store.company()!.name" />
-          } @else {
-            <span class="placeholder">🎨 Pas encore d'icône</span>
-          }
-        </div>
-        <button class="btn btn-generate" (click)="generateIcon()" [disabled]="store.loading()">
-          ✨ Générer l'icône
-        </button>
-      </div>
+      <p class="hint">🎨 Le logo de ton entreprise sera créé automatiquement au démarrage !</p>
 
       <div class="actions">
         <button class="btn btn-start" (click)="start()" [disabled]="store.loading()">
