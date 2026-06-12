@@ -9,7 +9,7 @@ import java.util.Arrays;
 
 /**
  * Allows the frontend to call the API. Locally this is the Angular dev server;
- * in Cloud Run this is the deployed frontend service URL.
+ * in Cloud Run this accepts the deployed frontend service URL.
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -26,7 +26,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(allowedOrigins)
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
+                .allowedOriginPatterns(allowedOrigins)
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*");
     }
 }

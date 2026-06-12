@@ -65,6 +65,7 @@ gcloud secrets add-iam-policy-binding openai-api-key \
 
 ```bash
 gcloud builds submit backend \
+  --timeout=30m \
   --tag "$REGION-docker.pkg.dev/$PROJECT_ID/equipe3/backend:latest"
 ```
 
@@ -80,7 +81,7 @@ gcloud run deploy equipe3-backend \
   --memory 1Gi \
   --cpu 1 \
   --set-secrets ANTHROPIC_API_KEY=anthropic-api-key:latest,OPENAI_API_KEY=openai-api-key:latest \
-  --set-env-vars ANTHROPIC_MODEL=claude-opus-4-8,OPENAI_IMAGE_MODEL=gpt-image-1-mini,ASSETS_DIR=/tmp/generated-assets
+  --set-env-vars ANTHROPIC_MODEL=claude-opus-4-8,OPENAI_IMAGE_MODEL=gpt-image-1-mini,ASSETS_DIR=/tmp/generated-assets,FRONTEND_ORIGIN=https://*.a.run.app
 ```
 
 Capture the deployed backend URL:
@@ -94,6 +95,7 @@ echo "$BACKEND_URL"
 
 ```bash
 gcloud builds submit frontend \
+  --timeout=30m \
   --tag "$REGION-docker.pkg.dev/$PROJECT_ID/equipe3/frontend:latest"
 ```
 
@@ -113,14 +115,10 @@ gcloud run deploy equipe3-frontend \
 
 Open the frontend URL printed by Cloud Run.
 
-Capture the deployed frontend URL and allow it in backend CORS:
+Capture the deployed frontend URL:
 
 ```bash
 export FRONTEND_URL="$(gcloud run services describe equipe3-frontend --region "$REGION" --format='value(status.url)')"
-
-gcloud run services update equipe3-backend \
-  --region "$REGION" \
-  --update-env-vars FRONTEND_ORIGIN="$FRONTEND_URL"
 ```
 
 ## 9. Smoke test
