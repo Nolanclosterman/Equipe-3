@@ -1,0 +1,14 @@
+<main class="app">
+  <header class="app-header">
+    <h1>⚡ Mon Entreprise — Simulateur</h1>
+    <span class="player">👤 {{ playerName() }}</span>
+  </header>
+
+  <!-- Frame 1 — company management (always available) -->
+  <app-company [playerName]="playerName()" />
+
+  <!-- Frame 2 — dashboard, only once the company is active -->
+  @if (store.isActive()) {
+    <app-dashboard [playerName]="playerName()" />
+  }
+</main>
