@@ -34,12 +34,12 @@ export class ProfileService {
 
   constructor(private readonly http: HttpClient) {}
 
-  /** URL of a one-shot asset ('avatar-1', 'ui-loader', …) or null if absent. */
+  /** URL of a one-shot asset ('type-resto', 'ui-loader', …) or null if absent. */
   asset(key: string): string | null {
     return this._manifest().assets[key] ?? null;
   }
 
-  /** GET /assets/manifest — which generated avatars / UI icons exist. */
+  /** GET /assets/manifest — which generated UI icons exist. */
   async loadManifest(): Promise<void> {
     try {
       this._manifest.set(

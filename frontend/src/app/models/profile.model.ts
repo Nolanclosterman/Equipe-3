@@ -35,7 +35,7 @@ export interface GameEvent {
 export interface AssetManifest {
   /** False when the backend has no OpenAI key (no images will ever come). */
   enabled: boolean;
-  /** asset key (e.g. 'avatar-1', 'type-resto', 'ui-loader') -> image URL. */
+  /** asset key (e.g. 'type-resto', 'ui-loader') -> image URL. */
   assets: Record<string, string>;
 }
 
@@ -52,7 +52,7 @@ export interface Company {
   type: string | null;
   /** Name the player gave to their avatar. */
   character: string | null;
-  /** One-shot asset key of the chosen avatar picture (e.g. 'avatar-3'). */
+  /** Key of the chosen avatar picture, shipped with the frontend (e.g. 'avatar-3'). */
   avatar: string | null;
   active: boolean;
   iconUrl: string | null;

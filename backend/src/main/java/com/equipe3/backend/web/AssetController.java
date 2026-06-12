@@ -33,7 +33,7 @@ public class AssetController {
     }
 
     /**
-     * The one-shot assets (avatars, UI icons) available right now, plus
+     * The one-shot assets (UI icons) available right now, plus
      * whether image generation is enabled at all — the frontend keeps emoji
      * fallbacks for anything missing and skips polling when disabled.
      */
