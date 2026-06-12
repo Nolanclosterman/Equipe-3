@@ -9,6 +9,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * One-shot generation of the static assets the UI needs: the player profile
@@ -98,23 +102,38 @@ public class OneShotAssetsService {
         if (!images.isEnabled()) {
             return; // no key: the UI keeps its emoji fallbacks
         }
-        int generated = 0;
-        for (Map.Entry<String, String> entry : CATALOG.entrySet()) {
-            String file = entry.getKey() + ".png";
-            if (assets.exists(file)) {
-                continue;
+        // Generate in parallel: a sequential run of ~20 images would keep the
+        // UI on emoji fallbacks for many minutes after the first boot.
+        ExecutorService pool = Executors.newFixedThreadPool(4);
+        AtomicInteger generated = new AtomicInteger();
+        try {
+            for (Map.Entry<String, String> entry : CATALOG.entrySet()) {
+                String file = entry.getKey() + ".png";
+                if (assets.exists(file)) {
+                    continue;
+                }
+                pool.submit(() -> {
+                    try {
+                        // One-time generation: keep the moodboard reference
+                        // (slower edits endpoint) for maximum style fidelity.
+                        byte[] png = images.generate(entry.getValue(), OpenAiImageService.SQUARE, "medium", true, true);
+                        assets.save(file, png);
+                        generated.incrementAndGet();
+                        log.info("One-shot asset generated: {}", file);
+                    } catch (Exception e) {
+                        log.warn("Could not generate one-shot asset {}: {}", file, e.getMessage());
+                    }
+                });
             }
-            try {
-                byte[] png = images.generate(entry.getValue(), OpenAiImageService.SQUARE, "medium", true);
-                assets.save(file, png);
-                generated++;
-                log.info("One-shot asset generated: {}", file);
-            } catch (Exception e) {
-                log.warn("Could not generate one-shot asset {}: {}", file, e.getMessage());
-            }
+        } finally {
+            pool.shutdown();
         }
-        if (generated > 0) {
-            log.info("One-shot asset generation done ({} new images).", generated);
+        try {
+            if (pool.awaitTermination(30, TimeUnit.MINUTES) && generated.get() > 0) {
+                log.info("One-shot asset generation done ({} new images).", generated.get());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 }

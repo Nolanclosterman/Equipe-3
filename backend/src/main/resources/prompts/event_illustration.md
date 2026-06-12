@@ -1,1 +1,1 @@
-Generate an image (landscape) that will illustrate the issue <issue> in this company context <company-context>
+Generate an image that will illustrate the issue <issue> in this company context <company-context>

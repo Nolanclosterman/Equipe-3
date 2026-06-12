@@ -81,7 +81,8 @@ export class ProfileService {
     name: string,
     companyName: string,
     type: string | null,
-    character: string | null
+    character: string | null,
+    avatar: string | null
   ): Promise<void> {
     await this.run(async () => {
       const company = await firstValueFrom(
@@ -89,6 +90,7 @@ export class ProfileService {
           name: companyName,
           type,
           character,
+          avatar,
         })
       );
       return this.withCompany(name, company);
@@ -202,6 +204,9 @@ export class ProfileService {
   private toMessage(err: unknown): string {
     if (typeof err === 'object' && err !== null && 'status' in err) {
       const status = (err as { status: number }).status;
+      // Surface the backend's kid-friendly message (e.g. name moderation).
+      const body = (err as { error?: { message?: string } }).error;
+      if (status === 400 && body?.message) return body.message;
       if (status === 0) return "Impossible de joindre le serveur. Le backend est-il démarré ?";
       if (status === 409) return 'Action impossible pour le moment.';
       if (status === 404) return 'Aucune entreprise trouvée.';

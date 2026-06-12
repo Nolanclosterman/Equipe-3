@@ -9,12 +9,15 @@ anthropic:
   api-key: ${ANTHROPIC_API_KEY:}
   model: ${ANTHROPIC_MODEL:claude-opus-4-8}
 
-# OpenAI image API (gpt-image-2) used for all generated assets: one-shot
-# avatars / UI icons and runtime event illustrations. When the key is missing
-# image generation is disabled and the game falls back to emoji placeholders.
+# OpenAI image API used for all generated assets: one-shot avatars / UI icons
+# and runtime event illustrations. Default model gpt-image-1-mini: fastest
+# (lowest latency for kids waiting in-game) at the cost of some image polish.
+# Runtime images are 1024x1024 / quality "low"; only standard sizes are used.
+# When the key is missing image generation is disabled and the game falls back
+# to emoji placeholders.
 openai:
   api-key: ${OPENAI_API_KEY:}
-  image-model: ${OPENAI_IMAGE_MODEL:gpt-image-2}
+  image-model: ${OPENAI_IMAGE_MODEL:gpt-image-1-mini}
 
 # Where the generated PNGs are stored and served from (GET /assets/{file}).
 assets:

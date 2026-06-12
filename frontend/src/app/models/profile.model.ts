@@ -50,7 +50,10 @@ export interface EventOutcome {
 export interface Company {
   name: string;
   type: string | null;
+  /** Name the player gave to their avatar. */
   character: string | null;
+  /** One-shot asset key of the chosen avatar picture (e.g. 'avatar-3'). */
+  avatar: string | null;
   active: boolean;
   iconUrl: string | null;
   scores: Scores;

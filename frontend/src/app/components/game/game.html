@@ -19,6 +19,12 @@
       <app-score-gauge label="Écologie" icon="🌱" [value]="company.scores.ecology" color="#37b24d" />
       <app-score-gauge label="Réputation" icon="🤝" [value]="company.scores.ethics" color="#7048e8" />
     </div>
+    @if (!company.gameOver) {
+      <button class="btn btn-quit" (click)="quit()" [disabled]="store.loading()"
+        title="Abandonner et recommencer une nouvelle entreprise">
+        🔄 Recommencer
+      </button>
+    }
   </header>
 
   @if (store.error(); as error) {

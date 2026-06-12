@@ -19,7 +19,7 @@ import java.util.function.UnaryOperator;
 /**
  * Illustrates the game at runtime with the OpenAI image pipeline:
  * <ul>
- *   <li>a landscape illustration of each event ({@code prompts/event_illustration.md}),</li>
+ *   <li>an illustration of each event ({@code prompts/event_illustration.md}),</li>
  *   <li>a small comic vignette for each proposed solution,</li>
  *   <li>a portrait of the character presenting the problem (white background
  *       removed, cached per company so recurring characters keep their face),</li>
@@ -56,12 +56,14 @@ public class IllustrationService {
         String context = "Company: " + company.getName()
                 + " (" + (company.getType() == null ? "small startup" : company.getType()) + ")";
 
-        // Landscape scene of the problem, driven by prompts/event_illustration.md.
+        // Scene of the problem, driven by prompts/event_illustration.md.
         submit(company, event, () -> {
             String prompt = loadTemplate()
                     .replace("<issue>", event.problem())
                     .replace("<company-context>", context);
-            byte[] png = images.generate(prompt, OpenAiImageService.LANDSCAPE, "low", false);
+            // 1024x1024 / low / no reference images: the fastest combination,
+            // so the scene appears quickly while the kid reads the problem.
+            byte[] png = images.generate(prompt, OpenAiImageService.SQUARE, "low", false, false);
             String url = assets.save("event-" + UUID.randomUUID() + ".png", png);
             return current -> current.withIllustration(url);
         });
@@ -74,7 +76,7 @@ public class IllustrationService {
                 String prompt = "A single small comic vignette showing this action taken by a kid "
                         + "entrepreneur, easy to read at a glance: \"" + solutions.get(index) + "\". "
                         + context;
-                byte[] png = images.generate(prompt, OpenAiImageService.SQUARE, "low", false);
+                byte[] png = images.generate(prompt, OpenAiImageService.SQUARE, "low", false, false);
                 String url = assets.save("solution-" + UUID.randomUUID() + ".png", png);
                 return current -> current.withSolutionIllustration(index, url);
             });
@@ -95,8 +97,28 @@ public class IllustrationService {
         return company.getCharacterImages().computeIfAbsent(key, k -> {
             String prompt = "Portrait (head and shoulders) of this character from a kids' "
                     + "entrepreneurship story: \"" + character + "\". Friendly and expressive.";
-            byte[] png = images.generate(prompt, OpenAiImageService.SQUARE, "low", true);
+            byte[] png = images.generate(prompt, OpenAiImageService.SQUARE, "low", true, false);
             return assets.save("character-" + k + "-" + shortId() + ".png", png);
+        });
+    }
+
+    /**
+     * Generates the company logo in the background and sets it on the company
+     * once ready; the scoreboard at the top of the game frame picks it up via
+     * the regular profile polling. No-op when disabled or already generated.
+     */
+    public void companyIconAsync(Company company) {
+        if (!images.isEnabled()
+                || (company.getIconUrl() != null && !company.getIconUrl().isBlank())) {
+            return;
+        }
+        pool.submit(() -> {
+            try {
+                company.setIconUrl(companyIcon(company));
+            } catch (Exception e) {
+                log.warn("Company icon generation failed (the game continues without it): {}",
+                        e.getMessage());
+            }
         });
     }
 
@@ -105,7 +127,8 @@ public class IllustrationService {
         String prompt = "A round logo/badge for a company named \"" + company.getName() + "\""
                 + (company.getType() == null ? "" : " which is about: " + company.getType())
                 + ". Simple, bold, memorable, sticker-like.";
-        byte[] png = images.generate(prompt, OpenAiImageService.SQUARE, "medium", true);
+        // "low", no reference images: the player waits on this call.
+        byte[] png = images.generate(prompt, OpenAiImageService.SQUARE, "low", true, false);
         return assets.save("icon-" + slug(company.getName()) + "-" + shortId() + ".png", png);
     }
 
@@ -124,6 +147,13 @@ public class IllustrationService {
                     GameEvent current = company.getCurrentEvent();
                     if (current != null && current.problem().equals(event.problem())) {
                         company.setCurrentEvent(update.apply(current));
+                        return;
+                    }
+                    // The event may still be waiting as the prefetched next
+                    // event: attach the image there, it follows the promotion.
+                    GameEvent next = company.getNextEvent();
+                    if (next != null && next.problem().equals(event.problem())) {
+                        company.setNextEvent(update.apply(next));
                     }
                 }
             } catch (Exception e) {
@@ -137,7 +167,7 @@ public class IllustrationService {
             return new ClassPathResource("prompts/event_illustration.md")
                     .getContentAsString(StandardCharsets.UTF_8).trim();
         } catch (Exception e) {
-            return "Generate an image (landscape) that will illustrate the issue <issue> "
+            return "Generate an image that will illustrate the issue <issue> "
                     + "in this company context <company-context>";
         }
     }

@@ -45,7 +45,8 @@ public class ProfileController {
             @PathVariable String name,
             @Valid @RequestBody CreateCompanyRequest request) {
         CompanyDto company = CompanyDto.from(
-                service.createCompany(name, request.name(), request.type(), request.character()));
+                service.createCompany(name, request.name(), request.type(),
+                        request.character(), request.avatar()));
         return ResponseEntity.status(HttpStatus.CREATED).body(company);
     }
 
