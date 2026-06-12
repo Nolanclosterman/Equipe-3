@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Company, Profile } from '../models/profile.model';
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = '/api';
 
 /**
  * Signal-based store for the connected profile and its company.
