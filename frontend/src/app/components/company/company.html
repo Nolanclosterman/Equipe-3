@@ -1,0 +1,51 @@
+<section class="frame">
+  <header class="frame-header">
+    <h2>🏢 Entreprise</h2>
+    <span class="badge">⭐ 1 seule entreprise par joueur</span>
+  </header>
+
+  @if (store.error(); as error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  @if (!store.hasCompany()) {
+    <!-- CAS 1 — Aucune entreprise existante -->
+    <div class="case">
+      <h3>Cas 1 — Aucune entreprise existante</h3>
+      <div class="create-row">
+        <input
+          type="text"
+          placeholder="Nom de l'entreprise"
+          [ngModel]="newName()"
+          (ngModelChange)="newName.set($event)"
+          (keyup.enter)="create()"
+          [disabled]="store.loading()"
+        />
+        <button class="btn btn-create" (click)="create()" [disabled]="store.loading() || !newName().trim()">
+          ➕ Créer
+        </button>
+      </div>
+    </div>
+  } @else {
+    <!-- CAS 2 — Entreprise existante -->
+    <div class="case">
+      <h3>Cas 2 — Entreprise existante</h3>
+      <div class="existing">
+        <div class="identity">
+          <span class="company-name">{{ store.company()!.name }}</span>
+          @if (store.isActive()) {
+            <span class="active">🟢 Entreprise active</span>
+          }
+        </div>
+        <div class="actions">
+          <button class="btn btn-start" (click)="start()" [disabled]="store.loading()">
+            ▶ Démarrer
+          </button>
+          <button class="btn btn-delete" (click)="delete()" [disabled]="store.loading()">
+            🗑 Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>
